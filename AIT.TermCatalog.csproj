@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Logik des Benennungskatalogs (Terms) im Vault Data Standard: Namenstabelle, Kopier-Zuordnung, Patchen von
+       MenuDefinitions.xml, Konfigurationsordnern, psm1-Modulen und Masken. Ohne Oberfläche - wird vom AIT-VDS-Konfigurator
+       und vom AIT Vault-Katalog genutzt. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>AIT.TermCatalog</RootNamespace>
+    <AssemblyName>AIT.TermCatalog</AssemblyName>
+  </PropertyGroup>
+
+</Project>
