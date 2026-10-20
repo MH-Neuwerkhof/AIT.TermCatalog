@@ -49,8 +49,20 @@ function mAitStatus([string]$text) {
 	} catch { }
 }
 
+function mAitGrid([bool]$visible, [bool]$clear) {
+	# Trefferliste der Maske zeigen/ausblenden (und leeren): waehrend die Vorschlagsliste offen ist, ersetzt sie die Trefferliste
+	try {
+		$g = $dsWindow.FindName("dataGrdTermsFound")
+		if ($g) {
+			if ($clear) { $g.ItemsSource = $null }
+			$g.Visibility = $(if ($visible) { "Visible" } else { "Collapsed" })
+		}
+	} catch { }
+}
+
 function mAitSuggestHide {
 	try { $lb = $dsWindow.FindName("lstTermSuggest"); if ($lb) { $lb.Visibility = "Collapsed" } } catch { }
+	mAitGrid $true $false
 }
 
 function mAitSuggestLangs {
@@ -192,12 +204,14 @@ function mAitSuggestUpdate {
 	}
 	$lb.ItemsSource = $mItems
 	$lb.Visibility = "Visible"
+	mAitGrid $false $true
 }
 
 function mAitSuggestAccept {
 	try {
 		$lb = $dsWindow.FindName("lstTermSuggest"); $mItem = $lb.SelectedItem
 		if (-not $mItem) { return }
+		mAitGrid $true $false
 		$grid = $dsWindow.FindName("dataGrdTermsFound")
 		$grid.ItemsSource = @($mItem.Row)
 		$grid.SelectedIndex = 0   # aktiviert "Uebernehmen" ueber den SelectionChanged-Handler der Maske
@@ -215,8 +229,8 @@ function mSearchTerms {
 	# aber gebuendelt geladen und lokal gefiltert; waehrenddessen eine Statusanzeige und der Warte-Cursor.
 	try {
 		mAitSuggestHide
+		mAitGrid $true $true
 		$grid = $dsWindow.FindName("dataGrdTermsFound")
-		$grid.ItemsSource = $null
 		try { $dsWindow.Cursor = [System.Windows.Input.Cursors]::Wait } catch { }
 		mAitStatus "Suche läuft - bitte einen Moment warten ..."
 
