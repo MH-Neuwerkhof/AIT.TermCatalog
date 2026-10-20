@@ -71,6 +71,7 @@ public static class TermCatalogPatcher
         results.AddRange(RestoreVaultTitleButtons(dsPath, exchangeFolder, dryRun));
         results.AddRange(TermCatalogNamesService.ApplyVault(dsPath, names, dryRun, copy));
         results.AddRange(PolishTermSearchMask(dsPath, dryRun, Path.Combine(VaultFileXamlSubPath, AitFileXamlName)));
+        results.AddRange(TermIconService.ApplyMenuIcons(dsPath, dryRun));
         return results;
     }
 

@@ -11,4 +11,9 @@
     <AssemblyName>AIT.TermCatalog</AssemblyName>
   </PropertyGroup>
 
+  <!-- Symbole der Katalog-Ebenen (Navigation und Menüs), eingebettet: Ebene1..4 je mit -add und -edit -->
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\*.ico" LogicalName="AIT.TermCatalog.Icons.%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

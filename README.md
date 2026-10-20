@@ -7,6 +7,7 @@ Gemeinsame Logik des **Benennungskatalogs (Terms)** im Autodesk Vault Data Stand
 * `TermCopyService` / `TermCopyConfig` – Kopier-Zuordnung („Begriff übernehmen“, Titel-Sprache, weitere Eigenschaften).
 * `TermSuggestService` – Autovervollständigung in der Begriffssuche (Vorschlagsliste unter dem Suchfeld der Terms-Maske; Begriffe werden einmal geladen und lokal gefiltert).
 * `TermCatalogPatcher` – Menüs, Titel-Buttons und Masken beibehalten bzw. aus dem Original wiederherstellen (`IsPresent`, `RunVault`, `RunCad`).
+* `TermIcons` / `TermIconService` – Symbole der Katalog-Ebenen (Bücherregal, Aktenschrank, Aktenordner, Bücherstapel; Navigation und Menü-Symbole Neu/Bearbeiten), eingebettet unter `Icons\`; `TermIconService` kopiert die Menü-Symbole in den Data Standard und trägt sie in `MenuDefinitions.xml` ein.
 * `ChangeResult`, `FileIo` – Ergebnis eines Schritts und robustes Schreiben in geschützte ProgramData-Ordner.
 
 Alle Schritte kennen eine Vorschau (`dryRun`) und legen vor jeder Änderung ein ZIP-Backup an. Die Klassifizierung von Dateien gehört bewusst nicht dazu.
