@@ -1,10 +1,11 @@
-# AIT.TermCatalog
+﻿# AIT.TermCatalog
 
 Gemeinsame Logik des **Benennungskatalogs (Terms)** im Autodesk Vault Data Standard – ohne Oberfläche, genutzt vom AIT-VDS-Konfigurator (und künftig vom AIT Vault-Katalog).
 
 * `TermCatalogNames` – Namenstabelle der Custom Objects und Eigenschaften (Sachgebiet … Begriff, Begriff DE/EN/FR/IT; Vorlagen Deutsch/Englisch/Eigene).
 * `TermCatalogNamesService` – stellt die Namen in MenuDefinitions.xml, Konfigurationsordnern, PS-Modulen, Skripten und Datenblättern um (idempotent, mit ZIP-Backup).
 * `TermCopyService` / `TermCopyConfig` – Kopier-Zuordnung („Begriff übernehmen“, Titel-Sprache, weitere Eigenschaften).
+* `TermSuggestService` – Autovervollständigung in der Begriffssuche (Vorschlagsliste unter dem Suchfeld der Terms-Maske; Begriffe werden einmal geladen und lokal gefiltert).
 * `TermCatalogPatcher` – Menüs, Titel-Buttons und Masken beibehalten bzw. aus dem Original wiederherstellen (`IsPresent`, `RunVault`, `RunCad`).
 * `ChangeResult`, `FileIo` – Ergebnis eines Schritts und robustes Schreiben in geschützte ProgramData-Ordner.
 

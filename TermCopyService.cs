@@ -15,8 +15,12 @@ public class TermCopyConfig
     public string TitleLang { get; set; } = "DE";
     public List<TermCopyRow> Rows { get; set; } = new();
 
-    public static TermCopyConfig From(string titleLanguage, IEnumerable<TermCopyRow>? rows) => new()
+    /// <summary>Autovervollständigung in der Begriffssuche (Vorschlagsliste beim Tippen). Standard: an.</summary>
+    public bool Autocomplete { get; set; } = true;
+
+    public static TermCopyConfig From(string titleLanguage, IEnumerable<TermCopyRow>? rows, bool autocomplete = true) => new()
     {
+        Autocomplete = autocomplete,
         TitleLang = TermCopyRow.Languages.Contains(titleLanguage) ? titleLanguage : "DE",
         Rows = (rows ?? Enumerable.Empty<TermCopyRow>()).Where(r => !string.IsNullOrWhiteSpace(r.Property)).Select(r => r.Clone()).ToList(),
     };

@@ -208,7 +208,7 @@ public static class TermCatalogNamesService
 
         // psm1 (gemeinsam mit CAD)
         results.AddRange(ApplyPsm1(ds, target, dryRun, st, copy));
-        results.Add(PatchFile(ds, @"Vault.Custom\Configuration\AIT.File.xaml", "Terms-Maske: Titel-Sprache (Radio)", TermCopyService.TransformMask, dryRun));
+        results.Add(PatchFile(ds, @"Vault.Custom\Configuration\AIT.File.xaml", "Terms-Maske: Titel-Sprache (Radio) und Vorschlagsliste", MaskTransform, dryRun));
 
         // Datenblätter der Definitionen (Prop[_XLTN_SEGMENT] → Prop[<Anzeigename>])
         results.AddRange(PatchDatasheets(ds, target, st.Vault, dryRun));
@@ -227,7 +227,7 @@ public static class TermCatalogNamesService
     {
         var st = LoadState(ds);
         var results = ApplyPsm1(ds, target, dryRun, st, copy);
-        results.Add(PatchFile(ds, @"CAD.Custom\Configuration\Inventor.xaml", "Terms-Maske: Titel-Sprache (Radio)", TermCopyService.TransformMask, dryRun));
+        results.Add(PatchFile(ds, @"CAD.Custom\Configuration\Inventor.xaml", "Terms-Maske: Titel-Sprache (Radio) und Vorschlagsliste", MaskTransform, dryRun));
         if (!dryRun && results.All(r => r.Applied))
         {
             st = LoadState(ds); st.Psm1 = target.Clone();
@@ -235,6 +235,9 @@ public static class TermCatalogNamesService
         }
         return results;
     }
+
+    /// <summary>Änderungen an der Terms-Maske (Inventor.xaml, AIT.File.xaml): Radio-Buttons "Titel in:" und Vorschlagsliste.</summary>
+    private static string MaskTransform(string xaml) => TermSuggestService.TransformMask(TermCopyService.TransformMask(xaml));
 
     private const string CatNameOld  = "mCreateClsSearchCond \"Category Name\"";
     private const string CatNameNew  = "mCreateClsSearchCond \"CategoryName\"";
@@ -249,7 +252,7 @@ public static class TermCatalogNamesService
             t = ReplaceQuoted(t, map);
             t = t.Replace(CatNameOld, CatNameNew);
             if (!t.Contains("-or $_.SysName -eq $name", StringComparison.Ordinal)) t = t.Replace(LookupOld, LookupNew);
-            return TermCopyService.TransformPsm1(t, copy);
+            return TermSuggestService.TransformPsm1(TermCopyService.TransformPsm1(t, copy), target, copy.Autocomplete);
         }, dryRun);
         return new List<ChangeResult> { r };
     }
