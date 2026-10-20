@@ -50,13 +50,17 @@ function mAitStatus([string]$text) {
 }
 
 function mAitGrid([bool]$visible, [bool]$clear) {
-	# Trefferliste der Maske zeigen/ausblenden (und leeren): waehrend die Vorschlagsliste offen ist, ersetzt sie die Trefferliste
+	# Trefferliste der Maske zeigen/ausblenden (und leeren): waehrend die Vorschlagsliste offen ist, ersetzt sie die Trefferliste;
+	# "Titel in:" gehoert zum Uebernehmen eines Begriffs und wird in dieser Zeit ebenfalls ausgeblendet (Platz fuer die Vorschlaege)
 	try {
+		$vis = $(if ($visible) { "Visible" } else { "Collapsed" })
 		$g = $dsWindow.FindName("dataGrdTermsFound")
 		if ($g) {
 			if ($clear) { $g.ItemsSource = $null }
-			$g.Visibility = $(if ($visible) { "Visible" } else { "Collapsed" })
+			$g.Visibility = $vis
 		}
+		$pn = $dsWindow.FindName("pnlTitleLang")
+		if ($pn) { $pn.Visibility = $vis }
 	} catch { }
 }
 
@@ -164,11 +168,11 @@ function mAitSuggestScore($it, $langs, [string]$ql, [string]$mW) {
 	return $best
 }
 
-function mAitSuggestUpdate {
+function mAitSuggestUpdate([switch]$Refresh) {
 	$tb = $dsWindow.FindName("mSearchTermText"); $lb = $dsWindow.FindName("lstTermSuggest")
 	if (-not $tb -or -not $lb) { return }
-	# nur beim Tippen - nicht, wenn die Maske den Text selbst setzt (z. B. beim Oeffnen mit dem Titel)
-	if (-not $tb.IsKeyboardFocusWithin) { mAitSuggestHide; return }
+	# nur beim Tippen - nicht, wenn die Maske den Text selbst setzt (z. B. beim Oeffnen mit dem Titel); -Refresh: Liste neu aufbauen (Sprachwahl geaendert)
+	if (-not $Refresh -and -not $tb.IsKeyboardFocusWithin) { mAitSuggestHide; return }
 	$q = ($tb.Text -replace '\*', '').Trim()
 	if ($q.Length -lt 2) { mAitSuggestHide; return }
 	if (-not ($Global:AITSuggestCache -and (((Get-Date) - $Global:AITSuggestLoaded).TotalMinutes -lt 10))) {
@@ -318,10 +322,13 @@ function mAitSuggestInit {
 		})
 		$btn = $dsWindow.FindName("btnSearchTerm")
 		if ($btn) { $btn.add_Click({ mAitSuggestHide }) }
-		# Sprachwahl geaendert: Vorschlaege passen nicht mehr - Liste schliessen
+		# Sprachwahl geaendert: ist die Liste offen, wird sie fuer die neue Auswahl neu aufgebaut
 		foreach ($c in 'DE', 'EN', 'FR', 'IT') {
 			$chk = $dsWindow.FindName("chk$c")
-			if ($chk) { $chk.add_Checked({ mAitSuggestHide }); $chk.add_Unchecked({ mAitSuggestHide }) }
+			if ($chk) {
+				$chk.add_Checked({ try { $l = $dsWindow.FindName("lstTermSuggest"); if ($l -and $l.Visibility -eq "Visible") { mAitSuggestUpdate -Refresh } } catch { } })
+				$chk.add_Unchecked({ try { $l = $dsWindow.FindName("lstTermSuggest"); if ($l -and $l.Visibility -eq "Visible") { mAitSuggestUpdate -Refresh } } catch { } })
+			}
 		}
 	}
 	catch { $dsDiag.Trace("AIT: Autovervollstaendigung nicht initialisiert: " + $_.Exception.Message) }
