@@ -78,8 +78,13 @@ function mAitSuggestLoad {
 
 		$mCache = @()
 		foreach ($r in $mRows.Values) {
-			$key = (@($r.Term_DE, $r.Term_EN, $r.Term_FR, $r.Term_IT) | Where-Object { $_ }) -join '|'
-			if ($key) { $mCache += [pscustomobject]@{ Row = $r; Key = $key.ToLowerInvariant() } }
+			$terms = @(@($r.Term_DE, $r.Term_EN, $r.Term_FR, $r.Term_IT) | Where-Object { $_ } | ForEach-Object { $_.ToLowerInvariant() })
+			if ($terms.Count) {
+				$key = $terms -join '|'
+				# Wortliste: " rillenkugellager  ball bearing ..." – Treffer am Wortanfang statt irgendwo mitten im Wort
+				$words = ' ' + ($key -replace '[|\-/,.()_]', ' ')
+				$mCache += [pscustomobject]@{ Row = $r; Key = $key; Words = $words; Terms = $terms }
+			}
 		}
 		$Global:AITSuggestCache = $mCache
 		$Global:AITSuggestLoaded = Get-Date
@@ -97,12 +102,14 @@ function mAitSuggestUpdate {
 	if ($q.Length -lt 2) { mAitSuggestHide; return }
 	if (-not (mAitSuggestLoad)) { mAitSuggestHide; return }
 	$ql = $q.ToLowerInvariant()
-	$mHits = @($Global:AITSuggestCache | Where-Object { $_.Key.Contains($ql) })
+	# Treffer am Wortanfang (in allen Sprachen); Teiltreffer mitten im Wort erst ab drei Zeichen
+	$mW = ' ' + $ql
+	$mHits = @($Global:AITSuggestCache | Where-Object { $_.Words.Contains($mW) -or ($ql.Length -ge 3 -and $_.Key.Contains($ql)) })
 	if ($mHits.Count -eq 0) { mAitSuggestHide; return }
 
-	# Beginn eines Begriffs vor Teiltreffern, dann alphabetisch
+	# Rangfolge: Begriff beginnt mit dem Suchtext, dann Wortanfang, dann Teiltreffer; innerhalb alphabetisch
 	$mRanked = $mHits | Sort-Object -Property @(
-		@{ Expression = { $r = $_.Row; if (@($r.Term_DE, $r.Term_EN, $r.Term_FR, $r.Term_IT) | Where-Object { $_ -and $_.ToLowerInvariant().StartsWith($ql) }) { 0 } else { 1 } } },
+		@{ Expression = { if (@($_.Terms | Where-Object { $_.StartsWith($ql) }).Count -gt 0) { 0 } elseif ($_.Words.Contains($mW)) { 1 } else { 2 } } },
 		@{ Expression = { $_.Row.Term_DE } }
 	) | Select-Object -First 12
 
@@ -212,7 +219,17 @@ function mAitSuggestInit {
     /// <summary>Fügt unter dem Suchfeld der Terms-Maske die (ausgeblendete) Vorschlagsliste ein (Inventor.xaml, AIT.File.xaml).</summary>
     public static string TransformMask(string xaml)
     {
-        if (xaml.Contains("x:Name=\"lstTermSuggest\"", StringComparison.Ordinal)) return xaml;
+        if (xaml.Contains("x:Name=\"lstTermSuggest\"", StringComparison.Ordinal))
+        {
+            // schon eingebaut: die Liste auf die aktuelle Fassung bringen (Layout wurde überarbeitet)
+            var m = Regex.Match(xaml, @"(?s)([ \t]*)<ListBox x:Name=""lstTermSuggest"".*?</ListBox>[ \t]*(\r?\n)?");
+            if (!m.Success) return xaml;
+            var nl0 = FileIo.DetectNewLine(xaml);
+            var ind0 = m.Groups[1].Value;
+            var current = BuildListBox(ind0, nl0);
+            var existing = m.Value.EndsWith("\n") ? m.Value : m.Value + nl0;
+            return existing == current ? xaml : xaml.Remove(m.Index, m.Length).Insert(m.Index, current);
+        }
         var gi = xaml.IndexOf("x:Name=\"grdTermSearch\"", StringComparison.Ordinal);
         if (gi < 0) return xaml;
         var nl = FileIo.DetectNewLine(xaml);
@@ -235,19 +252,24 @@ function mAitSuggestInit {
         if (be < 0) return xaml;
         var lineEnd = result.IndexOf('\n', be);
         var insertAt = lineEnd < 0 ? result.Length : lineEnd + 1;
-        var ind = new string(' ', 40);
+        return result.Insert(insertAt, BuildListBox(new string(' ', 40), nl));
+    }
+
+    /// <summary>Die Vorschlagsliste: zweizeilige Einträge (Begriff, darunter die Übersetzungen), keine waagerechte Bildlaufleiste.</summary>
+    private static string BuildListBox(string ind, string nl)
+    {
         var sb = new StringBuilder();
         void L(string s) => sb.Append(ind).Append(s).Append(nl);
-        L("<ListBox x:Name=\"lstTermSuggest\" Grid.Row=\"1\" Grid.ColumnSpan=\"2\" Visibility=\"Collapsed\" MaxHeight=\"190\" Margin=\"0,3,0,0\" IsTabStop=\"False\" HorizontalContentAlignment=\"Stretch\">");
+        L("<ListBox x:Name=\"lstTermSuggest\" Grid.Row=\"1\" Grid.ColumnSpan=\"2\" Visibility=\"Collapsed\" MaxHeight=\"230\" Margin=\"0,3,0,0\" IsTabStop=\"False\" HorizontalContentAlignment=\"Stretch\" ScrollViewer.HorizontalScrollBarVisibility=\"Disabled\">");
         L("    <ListBox.ItemTemplate>");
         L("        <DataTemplate>");
-        L("            <StackPanel Orientation=\"Horizontal\" Margin=\"2,1\">");
-        L("                <TextBlock Text=\"{Binding Primary}\" FontWeight=\"SemiBold\" Margin=\"0,0,12,0\"/>");
-        L("                <TextBlock Text=\"{Binding Secondary}\" Opacity=\"0.65\" TextTrimming=\"CharacterEllipsis\"/>");
+        L("            <StackPanel Margin=\"4,2\">");
+        L("                <TextBlock Text=\"{Binding Primary}\" FontWeight=\"SemiBold\" TextTrimming=\"CharacterEllipsis\"/>");
+        L("                <TextBlock Text=\"{Binding Secondary}\" Opacity=\"0.65\" FontSize=\"11\" TextTrimming=\"CharacterEllipsis\"/>");
         L("            </StackPanel>");
         L("        </DataTemplate>");
         L("    </ListBox.ItemTemplate>");
         L("</ListBox>");
-        return result.Insert(insertAt, sb.ToString());
+        return sb.ToString().TrimEnd('\r', '\n') + nl;
     }
 }
